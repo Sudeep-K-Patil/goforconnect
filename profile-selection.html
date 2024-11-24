@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go For Connect - Profile Selection</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .profile-options {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .profile-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            flex: 1;
+        }
+
+        .profile-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .profile-form {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .profile-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .job-exploration {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .explore-jobs-btn {
+            display: inline-block;
+            background-color: #0f3460;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .explore-jobs-btn:hover {
+            background-color: #16213e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Welcome to Go For Connect</h1>
+            <p style="color: white; margin-bottom: 2rem;">Please select your status:</p>
+        </header>
+        
+        <div class="profile-options">
+            <div class="profile-card" onclick="showProfileForm('hiring')">
+                <h3>I'm Hiring</h3>
+                <p>Looking for talented developers</p>
+            </div>
+            <div class="profile-card" onclick="showProfileForm('seeking')">
+                <h3>Open to Work</h3>
+                <p>Exploring new opportunities</p>
+            </div>
+        </div>
+
+        <div class="job-exploration">
+            <a href="/job-listings.html" class="explore-jobs-btn">Explore Job Listings</a>
+            <a href="/work-status.html" class="explore-jobs-btn" style="margin-top: 10px;">Manage Work Status</a>
+        </div>
+
+        <!-- Profile Form for Job Seekers -->
+        <div id="seekingForm" class="profile-form">
+            <h2 style="color: white;">Complete Your Profile</h2>
+            <form id="seekerProfileForm">
+                <input type="text" placeholder="Full Name" required>
+                <input type="email" placeholder="Email" required>
+                <input type="url" placeholder="LinkedIn Profile URL" required>
+                <input type="url" placeholder="LeetCode Profile URL" required>
+                
+                <div class="form-group">
+                    <select id="status" required>
+                        <option value="">Select Status</option>
+                        <option value="student">Student</option>
+                        <option value="professional">Professional</option>
+                    </select>
+                </div>
+
+                <!-- Student Fields -->
+                <div id="studentFields" style="display: none;">
+                    <input type="number" placeholder="Year of Graduation">
+                    <input type="text" placeholder="College/University">
+                    <input type="text" placeholder="Degree">
+                </div>
+
+                <!-- Professional Fields -->
+                <div id="professionalFields" style="display: none;">
+                    <input type="text" placeholder="Current Designation">
+                    <input type="text" placeholder="Current Organization">
+                </div>
+
+                <button type="submit" class="btn">Save Profile</button>
+            </form>
+        </div>
+
+        <!-- Profile Form for Recruiters -->
+        <div id="hiringForm" class="profile-form">
+            <h2 style="color: white;">Complete Recruiter Profile</h2>
+            <form id="recruiterProfileForm">
+                <input type="text" placeholder="Full Name" required>
+                <input type="email" placeholder="Email" required>
+                <input type="url" placeholder="LinkedIn Profile URL" required>
+                <input type="text" placeholder="Company Name" required>
+                <input type="text" placeholder="Designation" required>
+                <textarea placeholder="Company Description" required></textarea>
+                <button type="submit" class="btn">Save Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showProfileForm(type) {
+            document.querySelectorAll('.profile-form').forEach(form => form.style.display = 'none');
+            if (type === 'hiring') {
+                document.getElementById('hiringForm').style.display = 'block';
+            } else {
+                document.getElementById('seekingForm').style.display = 'block';
+            }
+        }
+
+        // Handle status change for seeker profile
+        document.getElementById('status').addEventListener('change', function(e) {
+            const studentFields = document.getElementById('studentFields');
+            const professionalFields = document.getElementById('professionalFields');
+            
+            if (e.target.value === 'student') {
+                studentFields.style.display = 'block';
+                professionalFields.style.display = 'none';
+            } else if (e.target.value === 'professional') {
+                studentFields.style.display = 'none';
+                professionalFields.style.display = 'block';
+            }
+        });
+
+        // Handle form submissions
+        document.getElementById('seekerProfileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            // Add API call to save seeker profile
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('http://localhost:8000/save-seeker-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData))
+                });
+                
+                if (response.ok) {
+                    alert('Profile saved successfully!');
+                    window.location.href = '/dashboard.html';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save profile. Please try again.');
+            }
+        });
+
+        document.getElementById('recruiterProfileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            // Add API call to save recruiter profile
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('http://localhost:8000/save-recruiter-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData))
+                });
+                
+                if (response.ok) {
+                    alert('Profile saved successfully!');
+                    window.location.href = '/dashboard.html';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save profile. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

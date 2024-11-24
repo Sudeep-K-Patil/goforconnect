@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Status - Go For Connect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #16213e;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #0f3460;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #e94560;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #0f3460;
+            border-radius: 5px;
+            background-color: #1a1a2e;
+            color: white;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0f3460;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #16213e;
+        }
+        #matchingJobs {
+            margin-top: 20px;
+            background-color: #0f3460;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .job-card {
+            background-color: #16213e;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Update Your Work Status</h1>
+        <form id="workStatusForm">
+            <div class="form-group">
+                <label for="currentStatus">Current Status</label>
+                <select id="currentStatus" name="currentStatus" required>
+                    <option value="">Select Status</option>
+                    <option value="Open to Work">Open to Work</option>
+                    <option value="Working">Currently Working</option>
+                    <option value="Freelancing">Freelancing</option>
+                    <option value="Studying">Studying</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="jobTitle">Job Title</label>
+                <input type="text" id="jobTitle" name="jobTitle" placeholder="Your current or desired job title">
+            </div>
+
+            <div class="form-group">
+                <label for="company">Company</label>
+                <input type="text" id="company" name="company" placeholder="Current or previous company">
+            </div>
+
+            <div class="form-group">
+                <label for="skills">Skills (comma-separated)</label>
+                <input type="text" id="skills" name="skills" placeholder="e.g. Python, React, Machine Learning">
+            </div>
+
+            <div class="form-group">
+                <label for="availableHours">Available Hours per Week</label>
+                <input type="number" id="availableHours" name="availableHours" min="0" max="168">
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="isFullTime" name="isFullTime">
+                <label for="isFullTime">Looking for Full-Time Position</label>
+            </div>
+
+            <div class="form-group">
+                <label for="preferredRole">Preferred Role Level</label>
+                <select id="preferredRole" name="preferredRole">
+                    <option value="">Select Role Level</option>
+                    <option value="Entry">Entry Level</option>
+                    <option value="Mid">Mid Level</option>
+                    <option value="Senior">Senior Level</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="startDate">Availability Start Date</label>
+                <input type="date" id="startDate" name="startDate">
+            </div>
+
+            <div class="form-group">
+                <label for="endDate">Availability End Date</label>
+                <input type="date" id="endDate" name="endDate">
+            </div>
+
+            <button type="submit">Update Work Status</button>
+        </form>
+
+        <div id="matchingJobs">
+            <h2>Matching Job Opportunities</h2>
+            <div id="jobList"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('workStatusForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Prepare work status data
+            const workStatus = {
+                currentStatus: document.getElementById('currentStatus').value,
+                jobTitle: document.getElementById('jobTitle').value,
+                company: document.getElementById('company').value,
+                skills: document.getElementById('skills').value.split(',').map(skill => skill.trim()),
+                availableHours: parseInt(document.getElementById('availableHours').value),
+                availability: {
+                    startDate: document.getElementById('startDate').value,
+                    endDate: document.getElementById('endDate').value,
+                    isFullTime: document.getElementById('isFullTime').checked,
+                    preferredRole: document.getElementById('preferredRole').value
+                }
+            };
+
+            try {
+                const response = await fetch('/update-work-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': localStorage.getItem('token') || 'dummy-token-test@example.com'
+                    },
+                    body: JSON.stringify(workStatus)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+
+                    // Display matching jobs
+                    const jobList = document.getElementById('jobList');
+                    jobList.innerHTML = ''; // Clear previous jobs
+
+                    if (result.matchingJobs && result.matchingJobs.length > 0) {
+                        result.matchingJobs.forEach(job => {
+                            const jobCard = document.createElement('div');
+                            jobCard.classList.add('job-card');
+                            jobCard.innerHTML = `
+                                <h3>${job.title} at ${job.company}</h3>
+                                <p>Required Skills: ${job.requiredSkills.join(', ')}</p>
+                                <p>Experience Level: ${job.experienceLevel}</p>
+                            `;
+                            jobList.appendChild(jobCard);
+                        });
+                    } else {
+                        jobList.innerHTML = '<p>No matching jobs found.</p>';
+                    }
+                } else {
+                    throw new Error(result.message || 'Failed to update work status');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message);
+            }
+        });
+
+        // Fetch existing work status on page load
+        async function fetchWorkStatus() {
+            try {
+                const response = await fetch('/get-work-status', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': localStorage.getItem('token') || 'dummy-token-test@example.com'
+                    }
+                });
+
+                if (response.ok) {
+                    const workStatus = await response.json();
+                    
+                    // Populate form with existing data
+                    document.getElementById('currentStatus').value = workStatus.currentStatus;
+                    document.getElementById('jobTitle').value = workStatus.jobTitle;
+                    document.getElementById('company').value = workStatus.company;
+                    document.getElementById('skills').value = workStatus.skills.join(', ');
+                    document.getElementById('availableHours').value = workStatus.availableHours;
+                    document.getElementById('isFullTime').checked = workStatus.availability.isFullTime;
+                    document.getElementById('preferredRole').value = workStatus.availability.preferredRole;
+                    document.getElementById('startDate').value = workStatus.availability.startDate ? 
+                        new Date(workStatus.availability.startDate).toISOString().split('T')[0] : '';
+                    document.getElementById('endDate').value = workStatus.availability.endDate ? 
+                        new Date(workStatus.availability.endDate).toISOString().split('T')[0] : '';
+                }
+            } catch (error) {
+                console.error('Error fetching work status:', error);
+            }
+        }
+
+        // Call fetchWorkStatus when page loads
+        fetchWorkStatus();
+    </script>
+</body>
+</html>
